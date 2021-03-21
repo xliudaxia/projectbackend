@@ -48,6 +48,8 @@ func main() {
 		/* ******************项目相关接口******************* */
 		v1Group.POST("/project", controller.CreateProductItem)
 		v1Group.GET("/projectlist", controller.GetProductList)
+		v1Group.DELETE("/project", controller.DeleteProjectItem)
+		v1Group.PUT("/project", controller.UpdateProjectItem)
 	}
 	r.Run(":9090")
 }
