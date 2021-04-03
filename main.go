@@ -46,10 +46,11 @@ func main() {
 		v1Group.POST("/user/login", controller.UserLogin)
 		v1Group.POST("/user/register", controller.UserRegister)
 		/* ******************项目相关接口******************* */
-		v1Group.POST("/project", controller.CreateProductItem)
 		v1Group.GET("/projectlist", controller.GetProductList)
+		v1Group.POST("/project", controller.CreateProductItem)
 		v1Group.DELETE("/project", controller.DeleteProjectItem)
 		v1Group.PUT("/project", controller.UpdateProjectItem)
+		v1Group.GET("/queryproject", controller.QueryProjectItem)
 	}
 	r.Run(":9090")
 }

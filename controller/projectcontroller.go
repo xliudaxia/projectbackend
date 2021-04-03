@@ -95,3 +95,22 @@ func UpdateProjectItem(c *gin.Context) {
 		})
 	}
 }
+
+/*
+QueryProjectItem 通过项目名称或项目介绍查询项目
+*/
+func QueryProjectItem(c *gin.Context) {
+	queryStr := c.Query("keyword")
+	if projectList, err := models.QueryProjectByRule(queryStr); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"error": err.Error(),
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status":      http.StatusOK,
+			"msg":         "项目查询结果返回成功！",
+			"projectlist": projectList,
+		})
+	}
+
+}
