@@ -17,6 +17,7 @@ func main() {
 	dao.DB.AutoMigrate(&models.Todo{})
 	dao.DB.AutoMigrate(&models.User{})
 	dao.DB.AutoMigrate(&models.Project{})
+	dao.DB.AutoMigrate(&models.Phone{})
 
 	r := gin.Default()
 	//设置前端打包目录的访问
@@ -26,7 +27,7 @@ func main() {
 
 	v1Group := r.Group("v1")
 	{
-		/* ******************TODO相关接口******************* */
+		/* ******************TODO相关接口********************/
 		//添加todo记录
 		v1Group.POST("/todo", controller.CreateTodoItem)
 		//查询全部todo数据
@@ -51,6 +52,18 @@ func main() {
 		v1Group.DELETE("/project", controller.DeleteProjectItem)
 		v1Group.PUT("/project", controller.UpdateProjectItem)
 		v1Group.GET("/queryproject", controller.QueryProjectItem)
+
+		/* ******************电话簿相关接口******************* */
+		//添加Phone记录
+		v1Group.POST("/phone", controller.CreatePhoneItem)
+		//查询全部Phone数据
+		v1Group.GET("/phone", controller.GetPhoneList)
+		//根据ID查询单个Phone记录
+		v1Group.GET("/phone/:id", controller.GetOnePhone)
+		//根据ID修改Phone记录
+		v1Group.PUT("/phone/:id", controller.UpdatePhoneItem)
+		//根据ID删除某条记录
+		v1Group.DELETE("/phone/:id", controller.DeletePhoneItem)
 	}
 	r.Run(":9090")
 }
