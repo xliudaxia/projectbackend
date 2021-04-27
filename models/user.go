@@ -18,6 +18,24 @@ type User struct {
 	Deleted   bool   `json:deleted`
 }
 
+type JwtToken struct {
+	Token string `json:"token"`
+}
+
+type UserInfo struct {
+	UserID    int    `json:"user_id"`
+	UserName  string `json:"user_name"`
+	Phone     int    `json:"phone"`
+	WorkCode  string `json:"work_code"`
+	CompanyID string `json:"company_id"`
+	Email     string `json:"email"`
+}
+
+type UserRole struct {
+	UserId  int    `json:"userId" xorm:"not null pk INT(11)"`
+	RoleKey string `json:"roleKey" xorm:"not null pk VARCHAR(20)"`
+}
+
 //创建一个用户
 func CreateUserItem(user *User) (err error) {
 	err = dao.DB.Debug().Create(&user).Error

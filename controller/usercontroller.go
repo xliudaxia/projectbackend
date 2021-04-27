@@ -2,6 +2,8 @@ package controller
 
 import (
 	"bubble/models"
+	"bubble/myutils"
+	"bubble/service"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -74,6 +76,13 @@ func UpdateUser(c *gin.Context) {
 
 //UserLogin 用户登录接口
 func UserLogin(c *gin.Context) {
+	/*
+	   Token校验实现步骤：
+	   1、登录系统根据相关信息生成token  √
+	   2、生成完token后，登录时将token返回并在cookies中保存   √×
+	   3、用户根据token信息获取当前用户信息   √
+	   4、登录后请求的接口需要增加token校验，不符合则经过中间件进行拦截
+	*/
 	userdata, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Println("获取用户信息失败! err-->", err)
@@ -116,31 +125,119 @@ func UserLogin(c *gin.Context) {
 		})
 		return
 	}
+	//执行token生成操作
+	token := service.GetToken(queryuser)
+	myutils.SetSession(c, token.Token, queryuser.ID)
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":           "ok",
 		"type":             "account",
+		"avatar":           "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png",
+		"notifyCount":      12,
+		"unreadCount":      11,
 		"currentAuthority": "admin",
 		"user":             queryuser,
+		"token":            token.Token,
 		"message":          "登录成功",
 	})
 }
 
+//用户退出接口
+func UserLogout(c *gin.Context) {
+	token := c.GetHeader("M-Token")
+	myutils.RemoveSession(c, token)
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"data": nil,
+		"msg":  "退出成功",
+	})
+}
+
+//UserAuthorize 用户权限校验中间件
+func UserAuthorize(c *gin.Context) {
+	var token string
+	var err error
+	m := make(map[string]interface{})
+	m["code"] = 2
+	token = c.GetHeader("M-Token")
+	if token == "" {
+		token, err = c.Cookie("M-Token")
+		if err != nil {
+			m["msg"] = err.Error()
+			c.JSON(http.StatusOK, m)
+			c.Abort()
+			return
+		}
+	}
+	session := myutils.GetSession(c, token)
+	if nil == session {
+		m["msg"] = "token不存在"
+		c.JSON(http.StatusOK, m)
+		c.Abort()
+		return
+	}
+	_, err = service.CheckToken(token, &models.User{ID: session.(int)})
+	if err != nil {
+		if err.Error() == "token已过期" || err.Error() == "token无效" {
+			m["msg"] = err.Error()
+			c.JSON(http.StatusOK, m)
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 1,
+				"data": nil,
+				"msg":  err.Error(),
+			})
+		}
+		c.Abort()
+		return
+	} else {
+		c.Next()
+	}
+}
+
 //currentUser 获取用户信息接口
 func CurrentUser(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"name":        "文少",
-		"avatar":      "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png",
-		"userid":      "00000001",
-		"email":       "antdesign@alipay.com",
-		"signature":   "海纳百川，有容乃大",
-		"title":       "交互专家",
-		"group":       "腾讯科技-区块链团队",
-		"notifyCount": 12,
-		"unreadCount": 11,
-		"country":     "中国",
-		"address":     "北京市双清路5号",
-		"phone":       "010-8888888",
-	})
+	token := c.GetHeader("M-Token")
+	session := myutils.GetSession(c, token)
+	if nil == session {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"data": nil,
+			"msg":  "token不存在"})
+		return
+	}
+	user, err := service.CheckToken(token, &models.User{ID: session.(int)})
+	if err != nil {
+		if err.Error() == "token已过期" || err.Error() == "token无效" {
+			m := make(map[string]interface{})
+			m["code"] = 2
+			m["msg"] = err.Error()
+			c.JSON(http.StatusOK, gin.H{
+				"code": 1,
+				"data": nil,
+				"msg":  "token已失效"})
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"data": nil,
+			"msg":  err.Error()})
+	} else {
+		c.JSON(http.StatusOK, user)
+	}
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"name":        "文少",
+	// 	"avatar":      "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png",
+	// 	"userid":      "00000001",
+	// 	"email":       "antdesign@alipay.com",
+	// 	"signature":   "海纳百川，有容乃大",
+	// 	"title":       "交互专家",
+	// 	"group":       "腾讯科技-区块链团队",
+	// 	"notifyCount": 12,
+	// 	"unreadCount": 11,
+	// 	"country":     "中国",
+	// 	"address":     "北京市双清路5号",
+	// 	"phone":       "010-8888888",
+	// })
 }
 
 //UserRegister 用户注册接口

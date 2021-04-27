@@ -4,6 +4,7 @@ import (
 	"bubble/controller"
 	"bubble/dao"
 	"bubble/models"
+	"bubble/myutils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,12 +22,23 @@ func main() {
 
 	r := gin.Default()
 	//设置前端打包目录的访问
+	myutils.UseSession(r)
 	r.Static("/static", "static")
 	r.LoadHTMLGlob("templates/*")
 	r.GET("/", controller.IndexHandler)
 
 	v1Group := r.Group("v1")
 	{
+		v1Group.POST("/user/login", controller.UserLogin)
+		v1Group.POST("/user/logout", controller.UserLogout)
+		/* ******************电话簿相关接口******************* */
+		v1Group.POST("/phone", controller.CreatePhoneItem)
+		v1Group.GET("/phone", controller.GetPhoneList)
+		v1Group.GET("/phone/:id", controller.GetOnePhone)
+		v1Group.PUT("/phone/:id", controller.UpdatePhoneItem)
+		v1Group.DELETE("/phone/:id", controller.DeletePhoneItem)
+		//权限校验
+		v1Group.Use(controller.UserAuthorize)
 		/* ******************TODO相关接口********************/
 		//添加todo记录
 		v1Group.POST("/todo", controller.CreateTodoItem)
@@ -39,12 +51,10 @@ func main() {
 		//根据ID删除某条记录
 		v1Group.DELETE("/todo/:id", controller.DeleteTodoItem)
 		/* ******************用户相关接口******************* */
-		//添加用户记录
 		v1Group.POST("/user", controller.CreateUser)
 		v1Group.GET("/userlist", controller.GetUserList)
 		v1Group.GET("/currentUser", controller.CurrentUser)
 		v1Group.PUT("/user/:id", controller.UpdateUser)
-		v1Group.POST("/user/login", controller.UserLogin)
 		v1Group.POST("/user/register", controller.UserRegister)
 		/* ******************项目相关接口******************* */
 		v1Group.GET("/projectlist", controller.GetProductList)
@@ -53,17 +63,6 @@ func main() {
 		v1Group.PUT("/project", controller.UpdateProjectItem)
 		v1Group.GET("/queryproject", controller.QueryProjectItem)
 
-		/* ******************电话簿相关接口******************* */
-		//添加Phone记录
-		v1Group.POST("/phone", controller.CreatePhoneItem)
-		//查询全部Phone数据
-		v1Group.GET("/phone", controller.GetPhoneList)
-		//根据ID查询单个Phone记录
-		v1Group.GET("/phone/:id", controller.GetOnePhone)
-		//根据ID修改Phone记录
-		v1Group.PUT("/phone/:id", controller.UpdatePhoneItem)
-		//根据ID删除某条记录
-		v1Group.DELETE("/phone/:id", controller.DeletePhoneItem)
 	}
 	r.Run(":9090")
 }

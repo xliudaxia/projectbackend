@@ -8,13 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var todo models.Todo
-
 func IndexHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", nil)
 }
 
 func CreateTodoItem(c *gin.Context) {
+	var todo models.Todo
 	c.BindJSON(&todo)
 	err := models.CreateTodoItem(&todo)
 	if err != nil {

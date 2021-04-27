@@ -10,7 +10,7 @@ import (
 
 func CreatePhoneItem(c *gin.Context) {
 	var phone models.Phone
-	c.BindJSON(&phone)
+	c.ShouldBindJSON(&phone)
 	err := models.CreatePhoneItem(&phone)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -75,13 +75,19 @@ func UpdatePhoneItem(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		return
 	}
-	c.BindJSON(&phone)
+	c.ShouldBindJSON(&phone)
 	if err := models.UpdatePhoneItem(phone); err != nil {
 		c.JSON(http.StatusOK, gin.H{
+			"code":  500,
+			"msg":   "更新联系人失败",
 			"error": err.Error(),
 		})
 	} else {
-		c.JSON(http.StatusOK, phone)
+		c.JSON(http.StatusOK, gin.H{
+			"code": 200,
+			"msg":  "更新联系人信息成功",
+			"data": &phone,
+		})
 	}
 }
 
@@ -95,11 +101,15 @@ func DeletePhoneItem(c *gin.Context) {
 	err := models.DeletePhoneItem(id)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
+			"code":  500,
+			"msg":   "联系人删除失败，请稍后再试",
 			"error": err.Error(),
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
-			id: "deleted",
+			"code": 200,
+			"msg":  "联系人删除成功",
+			"id":   id,
 		})
 	}
 }
