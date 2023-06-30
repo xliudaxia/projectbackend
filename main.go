@@ -7,13 +7,23 @@ import (
 	"bubble/myutils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := dao.InitMysql()
+
+	// 加载环境变量
+	err := godotenv.Load(".env.local")
 	if err != nil {
 		panic(err)
 	}
+
+	// 初始化数据库
+	err = dao.InitMysql()
+	if err != nil {
+		panic(err)
+	}
+
 	// defer dao.DB.close()
 	dao.DB.AutoMigrate(&models.Todo{})
 	dao.DB.AutoMigrate(&models.User{})

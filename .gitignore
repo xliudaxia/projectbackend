@@ -1,1 +1,4 @@
 /vendor
+
+# local env files
+.env*.local
