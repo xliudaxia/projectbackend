@@ -34,7 +34,8 @@ func main() {
 	//设置前端打包目录的访问
 	myutils.UseSession(r)
 	r.Static("/static", "static")
-	r.LoadHTMLGlob("templates/*")
+	// 加载静态文件目录
+	// r.LoadHTMLGlob("templates/*")
 	r.GET("/", controller.IndexHandler)
 
 	v1Group := r.Group("v1")
