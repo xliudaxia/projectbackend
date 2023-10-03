@@ -29,6 +29,7 @@ func main() {
 	dao.DB.AutoMigrate(&models.User{})
 	dao.DB.AutoMigrate(&models.Project{})
 	dao.DB.AutoMigrate(&models.Phone{})
+	dao.DB.AutoMigrate(&models.Category{})
 
 	r := gin.Default()
 	//设置前端打包目录的访问
@@ -48,6 +49,12 @@ func main() {
 		v1Group.GET("/phone/:id", controller.GetOnePhone)
 		v1Group.PUT("/phone/:id", controller.UpdatePhoneItem)
 		v1Group.DELETE("/phone/:id", controller.DeletePhoneItem)
+		/* ******************书签目录相关接口******************* */
+		v1Group.GET("/categoryList", controller.GetCategoryList)
+		v1Group.POST("/category", controller.CreateCateGoryItem)
+		v1Group.DELETE("/category/:id", controller.DeleteCategoryItem)
+		v1Group.PUT("/category/:id", controller.UpdateCategoryItem)
+		v1Group.GET("/category/:id", controller.GetOneCategory)
 		//权限校验
 		v1Group.Use(controller.UserAuthorize)
 		/* ******************TODO相关接口********************/
