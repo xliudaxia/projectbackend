@@ -15,7 +15,7 @@ import (
 
 var user models.User
 
-//CreateUser 创建新的用户
+// CreateUser 创建新的用户
 func CreateUser(c *gin.Context) {
 	c.BindJSON(&user)
 	err := models.CreateUserItem(&user)
@@ -33,7 +33,7 @@ func CreateUser(c *gin.Context) {
 
 }
 
-//GetUserList ：获取用户列表
+// GetUserList ：获取用户列表
 func GetUserList(c *gin.Context) {
 	userList, err := models.GetUserList()
 	if err != nil {
@@ -45,7 +45,7 @@ func GetUserList(c *gin.Context) {
 	}
 }
 
-//UpdateUser 更新用户记录
+// UpdateUser 更新用户记录
 func UpdateUser(c *gin.Context) {
 	id, ok := c.Params.Get("id")
 	if !ok {
@@ -74,7 +74,7 @@ func UpdateUser(c *gin.Context) {
 	}
 }
 
-//UserLogin 用户登录接口
+// UserLogin 用户登录接口
 func UserLogin(c *gin.Context) {
 	/*
 	   Token校验实现步骤：
@@ -142,7 +142,7 @@ func UserLogin(c *gin.Context) {
 	})
 }
 
-//用户退出接口
+// 用户退出接口
 func UserLogout(c *gin.Context) {
 	token := c.GetHeader("M-Token")
 	myutils.RemoveSession(c, token)
@@ -153,49 +153,7 @@ func UserLogout(c *gin.Context) {
 	})
 }
 
-//UserAuthorize 用户权限校验中间件
-func UserAuthorize(c *gin.Context) {
-	var token string
-	var err error
-	m := make(map[string]interface{})
-	m["code"] = 2
-	token = c.GetHeader("M-Token")
-	if token == "" {
-		token, err = c.Cookie("M-Token")
-		if err != nil {
-			m["msg"] = err.Error()
-			c.JSON(http.StatusOK, m)
-			c.Abort()
-			return
-		}
-	}
-	session := myutils.GetSession(c, token)
-	if nil == session {
-		m["msg"] = "token不存在"
-		c.JSON(http.StatusOK, m)
-		c.Abort()
-		return
-	}
-	_, err = service.CheckToken(token, &models.User{ID: session.(int)})
-	if err != nil {
-		if err.Error() == "token已过期" || err.Error() == "token无效" {
-			m["msg"] = err.Error()
-			c.JSON(http.StatusOK, m)
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"code": 1,
-				"data": nil,
-				"msg":  err.Error(),
-			})
-		}
-		c.Abort()
-		return
-	} else {
-		c.Next()
-	}
-}
-
-//currentUser 获取用户信息接口
+// currentUser 获取用户信息接口
 func CurrentUser(c *gin.Context) {
 	token := c.GetHeader("M-Token")
 	session := myutils.GetSession(c, token)
@@ -224,23 +182,9 @@ func CurrentUser(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, user)
 	}
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"name":        "文少",
-	// 	"avatar":      "https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png",
-	// 	"userid":      "00000001",
-	// 	"email":       "antdesign@alipay.com",
-	// 	"signature":   "海纳百川，有容乃大",
-	// 	"title":       "交互专家",
-	// 	"group":       "腾讯科技-区块链团队",
-	// 	"notifyCount": 12,
-	// 	"unreadCount": 11,
-	// 	"country":     "中国",
-	// 	"address":     "北京市双清路5号",
-	// 	"phone":       "010-8888888",
-	// })
 }
 
-//UserRegister 用户注册接口
+// UserRegister 用户注册接口
 func UserRegister(c *gin.Context) {
 	c.BindJSON(&user)
 	//注册参数完整性校验

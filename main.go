@@ -3,6 +3,7 @@ package main
 import (
 	"bubble/controller"
 	"bubble/dao"
+	"bubble/middleware"
 	"bubble/models"
 	"bubble/myutils"
 
@@ -25,11 +26,7 @@ func main() {
 	}
 
 	// defer dao.DB.close()
-	dao.DB.AutoMigrate(&models.Todo{})
-	dao.DB.AutoMigrate(&models.User{})
-	dao.DB.AutoMigrate(&models.Project{})
-	dao.DB.AutoMigrate(&models.Phone{})
-	dao.DB.AutoMigrate(&models.Category{})
+	dao.DB.AutoMigrate(&models.Todo{}, &models.User{}, &models.Project{}, &models.Phone{}, &models.Category{}, &models.Link{})
 
 	r := gin.Default()
 	//设置前端打包目录的访问
@@ -55,8 +52,16 @@ func main() {
 		v1Group.DELETE("/category/:id", controller.DeleteCategoryItem)
 		v1Group.PUT("/category/:id", controller.UpdateCategoryItem)
 		v1Group.GET("/category/:id", controller.GetOneCategory)
+
 		//权限校验
-		v1Group.Use(controller.UserAuthorize)
+		v1Group.Use(middleware.UserAuthorize)
+		/* ******************书签相关接口******************* */
+		v1Group.GET("/linkList", controller.GetLinkList)
+		v1Group.POST("/link", controller.CreateLinkItem)
+		v1Group.DELETE("/link/:id", controller.DeleteLinkItem)
+		v1Group.PUT("/link/:id", controller.UpdateLinkItem)
+		v1Group.GET("/userLinkList", controller.GetUserLinkList)
+		v1Group.GET("/link/:id", controller.GetOneLink)
 		/* ******************TODO相关接口********************/
 		//添加todo记录
 		v1Group.POST("/todo", controller.CreateTodoItem)
