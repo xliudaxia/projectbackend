@@ -32,7 +32,7 @@ func UserAuthorize(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	user, err := service.CheckToken(token, &models.User{ID: session.(int)})
+	user, originUser, err := service.CheckToken(token, &models.User{ID: session.(int64)})
 
 	if err != nil {
 		if err.Error() == "token已过期" || err.Error() == "token无效" {
@@ -50,6 +50,7 @@ func UserAuthorize(c *gin.Context) {
 	} else {
 		c.Set("UID", user.UserID)
 		c.Set("USERNAME", user.UserName)
+		c.Set("USER", originUser)
 		c.Next()
 	}
 }
