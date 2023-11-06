@@ -26,7 +26,7 @@ func main() {
 	}
 
 	// defer dao.DB.close()
-	dao.DB.AutoMigrate(&models.Todo{}, &models.User{}, &models.Project{}, &models.Phone{}, &models.Category{}, &models.Link{})
+	dao.DB.AutoMigrate(&models.Todo{}, &models.User{}, &models.Project{}, &models.Phone{}, &models.Category{}, &models.Link{}, &models.Post{}, &models.PostContent{})
 
 	r := gin.Default()
 	//设置前端打包目录的访问
@@ -37,8 +37,21 @@ func main() {
 	r.GET("/", controller.IndexHandler)
 
 	v1Group := r.Group("v1")
+
+	authApi := v1Group.Group("/").Use(middleware.JwtAuth())
 	{
-		v1Group.POST("/user/login", controller.UserLogin)
+		// 获取用户信息
+		authApi.GET("/user/info", controller.GetUserInfo)
+		// 更改密码
+		authApi.POST("/user/password", controller.ChangeUserPassword)
+		// 更改昵称
+		authApi.POST("/user/nickname", controller.ChangeNickName)
+	}
+	{
+		// 用户登录
+		v1Group.POST("/user/login", controller.NewUserLogin)
+		// 用户注册
+		v1Group.POST("/user/register", controller.NewRegister)
 		v1Group.POST("/user/logout", controller.UserLogout)
 		/* ******************电话簿相关接口******************* */
 		v1Group.POST("/phone", controller.CreatePhoneItem)
@@ -52,7 +65,12 @@ func main() {
 		v1Group.DELETE("/category/:id", controller.DeleteCategoryItem)
 		v1Group.PUT("/category/:id", controller.UpdateCategoryItem)
 		v1Group.GET("/category/:id", controller.GetOneCategory)
-
+		// 获取广场流
+		v1Group.GET("/posts", controller.GetPostList)
+		// 获取指定用户的post列表
+		v1Group.GET("/user/posts", controller.GetUserPosts)
+		// 获取POST详情
+		v1Group.GET("/post", controller.GetPost)
 		//权限校验
 		v1Group.Use(middleware.UserAuthorize)
 		/* ******************书签相关接口******************* */
@@ -78,14 +96,18 @@ func main() {
 		v1Group.GET("/userlist", controller.GetUserList)
 		v1Group.GET("/currentUser", controller.CurrentUser)
 		v1Group.PUT("/user/:id", controller.UpdateUser)
-		v1Group.POST("/user/register", controller.UserRegister)
 		/* ******************项目相关接口******************* */
 		v1Group.GET("/projectlist", controller.GetProductList)
 		v1Group.POST("/project", controller.CreateProductItem)
 		v1Group.DELETE("/project", controller.DeleteProjectItem)
 		v1Group.PUT("/project", controller.UpdateProjectItem)
 		v1Group.GET("/queryproject", controller.QueryProjectItem)
-
+		/* ******************Twitter相关接口******************* */
+		// 新增POST方法
+		v1Group.POST("/post", controller.CreatePost)
+		// 删除POST方法
+		v1Group.DELETE("/post", controller.DeletePost)
 	}
+
 	r.Run(":9090")
 }

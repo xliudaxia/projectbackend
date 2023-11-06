@@ -3,12 +3,15 @@ package controller
 import (
 	"bubble/models"
 	"bubble/myutils"
+	"bubble/pkg/app"
+	"bubble/pkg/errcode"
 	"bubble/service"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 )
@@ -142,6 +145,39 @@ func UserLogin(c *gin.Context) {
 	})
 }
 
+func NewUserLogin(c *gin.Context) {
+	param := models.LoginRequest{}
+	response := app.NewResponse(c)
+	valid, errs := app.BindAndValid(c, &param)
+
+	if !valid {
+		response.ToErrorResponse(errcode.InvalidParams.WithDetails(errs.Errors()...))
+		return
+	}
+
+	user, err := service.LoginAction(c, &param)
+
+	if err != nil {
+		response.ToErrorResponse(err.(*errcode.Error))
+		return
+	}
+
+	token, err := app.GenerateToken(user)
+
+	// 兼容性操作
+	myutils.SetSession(c, token, user.ID)
+
+	if err != nil {
+		response.ToErrorResponse(errcode.UnauthorizedTokenGenerate)
+		return
+	}
+
+	response.ToResponse(gin.H{
+		"token": token,
+	})
+
+}
+
 // 用户退出接口
 func UserLogout(c *gin.Context) {
 	token := c.GetHeader("M-Token")
@@ -151,6 +187,64 @@ func UserLogout(c *gin.Context) {
 		"data": nil,
 		"msg":  "退出成功",
 	})
+}
+
+func ChangeUserPassword(c *gin.Context) {
+	param := models.ChangePasswordReq{}
+	response := app.NewResponse(c)
+	valid, errs := app.BindAndValid(c, &param)
+	if !valid {
+		response.ToErrorResponse(errcode.InvalidParams.WithDetails(errs.Errors()...))
+		return
+	}
+
+	user := &models.User{}
+	if u, exists := c.Get("USER"); exists {
+		user = u.(*models.User)
+	}
+
+	// 密码检查
+	err := service.CheckPassword(param.Password)
+	if err != nil {
+		response.ToErrorResponse(err.(*errcode.Error))
+		return
+	}
+
+	// 旧密码校验
+	if !service.ValidPassword(user.PassWord, param.OldPassword, user.Salt) {
+		response.ToErrorResponse(errcode.ErrorOldPassword)
+		return
+	}
+
+	user.PassWord, user.Salt = service.EncryptPasswordAndSalt(param.Password)
+
+	service.UpdateUserInfo(user)
+
+	response.ToResponse(nil)
+}
+
+func ChangeNickName(c *gin.Context) {
+	param := models.ChangeNicknameReq{}
+	response := app.NewResponse(c)
+	valid, errs := app.BindAndValid(c, &param)
+	if !valid {
+		response.ToErrorResponse(errcode.InvalidParams.WithDetails(errs.Errors()...))
+		return
+	}
+
+	user := &models.User{}
+	if u, exists := c.Get("USER"); exists {
+		user = u.(*models.User)
+	}
+
+	if utf8.RuneCountInString(param.Nickname) < 2 || utf8.RuneCountInString(param.Nickname) > 12 {
+		response.ToErrorResponse(errcode.NicknameLengthLimit)
+		return
+	}
+
+	user.NickName = param.Nickname
+	service.UpdateUserInfo(user)
+	response.ToResponse(nil)
 }
 
 // currentUser 获取用户信息接口
@@ -164,7 +258,7 @@ func CurrentUser(c *gin.Context) {
 			"msg":  "token不存在"})
 		return
 	}
-	user, err := service.CheckToken(token, &models.User{ID: session.(int)})
+	user, _, err := service.CheckToken(token, &models.User{ID: session.(int64)})
 	if err != nil {
 		if err.Error() == "token已过期" || err.Error() == "token无效" {
 			m := make(map[string]interface{})
@@ -188,7 +282,7 @@ func CurrentUser(c *gin.Context) {
 func UserRegister(c *gin.Context) {
 	c.BindJSON(&user)
 	//注册参数完整性校验
-	if user.UserName == "" || user.Email == "" || user.Phone == 0 || user.WorkCode == "" {
+	if user.UserName == "" || user.Email == "" || user.Phone == 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    1,
 			"message": "参数不完整，请检查！",
@@ -206,20 +300,6 @@ func UserRegister(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    1,
 			"message": "该用户名已被注册，请更换后重试！",
-		})
-		return
-	}
-	//校验当前注册用户工号是否重复
-	tmpuser, err = models.RegisterUserCheck(user.WorkCode, "work_code")
-	if err != nil {
-		log.Println("查询注册用户工号是否重复失败！")
-		c.JSON(http.StatusOK, err.Error())
-		return
-	}
-	if tmpuser.UserName != "" {
-		c.JSON(http.StatusOK, gin.H{
-			"code":    1,
-			"message": "当前注册用户工号已被占用，请更换后重试！",
 		})
 		return
 	}
@@ -267,4 +347,76 @@ func UserRegister(c *gin.Context) {
 		})
 	}
 
+}
+
+func NewRegister(c *gin.Context) {
+	param := models.RegisterRequest{}
+	response := app.NewResponse(c)
+	valid, errs := app.BindAndValid(c, &param)
+	if !valid {
+		response.ToErrorResponse(errcode.InvalidParams.WithDetails(errs.Errors()...))
+		return
+	}
+
+	// 用户名检查
+	err := service.ValidUsername(param.Username)
+	if err != nil {
+		response.ToErrorResponse(err.(*errcode.Error))
+		return
+	}
+
+	// 密码检查
+	err = service.CheckPassword(param.Password)
+	if err != nil {
+		response.ToErrorResponse(err.(*errcode.Error))
+		return
+	}
+
+	user, err := service.Register(
+		param.Username,
+		param.Password,
+	)
+
+	if err != nil {
+		response.ToErrorResponse(errcode.UserRegisterFailed)
+		return
+	}
+
+	response.ToResponse(gin.H{
+		"id":       user.ID,
+		"username": user.UserName,
+	})
+
+}
+
+func GetUserInfo(c *gin.Context) {
+	param := models.AuthRequest{}
+	response := app.NewResponse(c)
+
+	if username, exists := c.Get("USERNAME"); exists {
+		param.Username = username.(string)
+	}
+
+	user, err := service.GetUserInfo(&param)
+
+	if err != nil {
+		response.ToErrorResponse(errcode.UnauthorizedAuthNotExist)
+		return
+	}
+
+	phone := ""
+
+	if strconv.Itoa(user.Phone) != "" && len(strconv.Itoa(user.Phone)) == 11 {
+		phone = strconv.Itoa(user.Phone)[0:3] + "****" + strconv.Itoa(user.Phone)[7:]
+	}
+
+	response.ToResponse(gin.H{
+		"id":       user.ID,
+		"nickname": user.NickName,
+		"username": user.UserName,
+		"status":   user.Status,
+		"avatar":   user.Avatar,
+		"phone":    phone,
+		"is_admin": user.IsAdmin,
+	})
 }
