@@ -23,7 +23,7 @@ func CreatePost(c *gin.Context) {
 	userID, _ := c.Get("UID")
 
 	post := &models.Post{
-		UserID: int64(userID.(int)),
+		UserID: userID.(int64),
 		Tags:   strings.Join(param.Tags, ","),
 		IP:     "127.0.0.2",
 		IPLoc:  "demo location",
@@ -36,7 +36,7 @@ func CreatePost(c *gin.Context) {
 	for _, item := range param.Contents {
 		postContent := &models.PostContent{
 			PostID:  int64(postID),
-			UserID:  int64(userID.(int)),
+			UserID:  userID.(int64),
 			Content: item.Content,
 			Type:    item.Type,
 			Sort:    item.Sort,

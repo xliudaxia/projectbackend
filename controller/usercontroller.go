@@ -420,3 +420,24 @@ func GetUserInfo(c *gin.Context) {
 		"is_admin": user.IsAdmin,
 	})
 }
+
+func GetUserProfile(c *gin.Context) {
+	response := app.NewResponse(c)
+	username := c.Query("username")
+	user, err := models.GetUserByUsername(username)
+
+	if err != nil {
+		response.ToErrorResponse(errcode.NoExistUsername)
+		return
+	}
+
+	response.ToResponse(gin.H{
+		"id":       user.ID,
+		"nickname": user.NickName,
+		"username": user.UserName,
+		"status":   user.Status,
+		"avatar":   user.Avatar,
+		"is_admin": user.IsAdmin,
+	})
+
+}

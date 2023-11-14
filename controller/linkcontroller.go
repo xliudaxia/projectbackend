@@ -119,7 +119,7 @@ func GetUserLinkList(c *gin.Context) {
 		})
 	}
 
-	linkList, err := models.GetUserLinkList(strconv.Itoa(userID.(int)))
+	linkList, err := models.GetUserLinkList(strconv.FormatInt(userID.(int64), 10))
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"error": err.Error(),

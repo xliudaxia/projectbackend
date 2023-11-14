@@ -20,9 +20,7 @@ func main() {
 
 	v1Group := r.Group("v1")
 	{
-		// 用户登录
 		v1Group.POST("/user/login", controller.NewUserLogin)
-		// 用户注册
 		v1Group.POST("/user/register", controller.NewRegister)
 		v1Group.POST("/user/logout", controller.UserLogout)
 		/* ******************验证码相关接口******************* */
@@ -40,22 +38,19 @@ func main() {
 		v1Group.DELETE("/category/:id", controller.DeleteCategoryItem)
 		v1Group.PUT("/category/:id", controller.UpdateCategoryItem)
 		v1Group.GET("/category/:id", controller.GetOneCategory)
-		// 获取广场流
-		v1Group.GET("/posts", controller.GetPostList)
-		// 获取指定用户的post列表
-		v1Group.GET("/user/posts", controller.GetUserPosts)
-		// 获取POST详情
-		v1Group.GET("/post", controller.GetPost)
-
+		/* ******************Twitter相关******************* */
+		v1Group.GET("/posts", controller.GetPostList)           // 获取广场流
+		v1Group.GET("/user/posts", controller.GetUserPosts)     // 获取指定用户的post列表
+		v1Group.GET("/post", controller.GetPost)                // 获取POST详情
+		v1Group.GET("/user/profile", controller.GetUserProfile) // 获取指定用户的基本信息
 	}
 	authApi := v1Group.Group("/").Use(middleware.JwtAuth())
 	{
-		// 获取用户信息
-		authApi.GET("/user/info", controller.GetUserInfo)
-		// 更改密码
-		authApi.POST("/user/password", controller.ChangeUserPassword)
-		// 更改昵称
-		authApi.POST("/user/nickname", controller.ChangeNickName)
+		authApi.GET("/user/info", controller.GetUserInfo)             // 获取用户信息
+		authApi.POST("/user/password", controller.ChangeUserPassword) // 更改密码
+		authApi.POST("/user/nickname", controller.ChangeNickName)     // 更改昵称
+		authApi.POST("/post", controller.CreatePost)                  // 新增POST方法
+		authApi.DELETE("/post", controller.DeletePost)                // 删除POST方法
 	}
 	oldAuthApi := v1Group.Group("/").Use(middleware.UserAuthorize)
 	{
@@ -88,11 +83,6 @@ func main() {
 		oldAuthApi.DELETE("/project", controller.DeleteProjectItem)
 		oldAuthApi.PUT("/project", controller.UpdateProjectItem)
 		oldAuthApi.GET("/queryproject", controller.QueryProjectItem)
-		/* ******************Twitter相关接口******************* */
-		// 新增POST方法
-		oldAuthApi.POST("/post", controller.CreatePost)
-		// 删除POST方法
-		oldAuthApi.DELETE("/post", controller.DeletePost)
 	}
 
 	r.Run(":9090")
