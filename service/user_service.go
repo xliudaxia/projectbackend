@@ -14,7 +14,6 @@ import (
 	"bubble/pkg/convert"
 	"bubble/pkg/errcode"
 
-	"bubble/myutils"
 	"bubble/utils"
 
 	"github.com/dgrijalva/jwt-go"
@@ -31,14 +30,14 @@ func GetToken(user *models.User) *models.JwtToken {
 	info["userId"] = user.ID
 	info["exp"] = now.Add(time.Hour * 12).Unix() // 1 小时过期
 	info["iat"] = now.Unix()
-	tokenString := myutils.CreateToken(TokenKey, info)
+	tokenString := utils.CreateToken(TokenKey, info)
 	return &models.JwtToken{
 		Token: tokenString,
 	}
 }
 
 func CheckToken(token string, user *models.User) (*models.UserInfo, *models.User, error) {
-	info, ok := myutils.ParseToken(token, TokenKey)
+	info, ok := utils.ParseToken(token, TokenKey)
 	infoMap := info.(jwt.MapClaims)
 	if ok {
 		expTime := infoMap["exp"].(float64)

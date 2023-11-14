@@ -2,10 +2,10 @@ package controller
 
 import (
 	"bubble/models"
-	"bubble/myutils"
 	"bubble/pkg/app"
 	"bubble/pkg/errcode"
 	"bubble/service"
+	"bubble/utils"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -130,7 +130,7 @@ func UserLogin(c *gin.Context) {
 	}
 	//执行token生成操作
 	token := service.GetToken(queryuser)
-	myutils.SetSession(c, token.Token, queryuser.ID)
+	utils.SetSession(c, token.Token, queryuser.ID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":           "ok",
@@ -165,7 +165,7 @@ func NewUserLogin(c *gin.Context) {
 	token, err := app.GenerateToken(user)
 
 	// 兼容性操作
-	myutils.SetSession(c, token, user.ID)
+	utils.SetSession(c, token, user.ID)
 
 	if err != nil {
 		response.ToErrorResponse(errcode.UnauthorizedTokenGenerate)
@@ -181,7 +181,7 @@ func NewUserLogin(c *gin.Context) {
 // 用户退出接口
 func UserLogout(c *gin.Context) {
 	token := c.GetHeader("M-Token")
-	myutils.RemoveSession(c, token)
+	utils.RemoveSession(c, token)
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"data": nil,
@@ -250,7 +250,7 @@ func ChangeNickName(c *gin.Context) {
 // currentUser 获取用户信息接口
 func CurrentUser(c *gin.Context) {
 	token := c.GetHeader("M-Token")
-	session := myutils.GetSession(c, token)
+	session := utils.GetSession(c, token)
 	if nil == session {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 1,

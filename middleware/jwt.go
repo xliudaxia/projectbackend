@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"bubble/models"
-	"bubble/myutils"
 	"bubble/pkg/app"
 	"bubble/pkg/errcode"
 	"bubble/service"
+	"bubble/utils"
 	"net/http"
 	"strconv"
 	"strings"
@@ -30,7 +30,7 @@ func UserAuthorize(c *gin.Context) {
 			return
 		}
 	}
-	session := myutils.GetSession(c, token)
+	session := utils.GetSession(c, token)
 	if nil == session {
 		m["msg"] = "token不存在"
 		c.JSON(http.StatusOK, m)

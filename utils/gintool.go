@@ -1,4 +1,4 @@
-package myutils
+package utils
 
 import (
 	"github.com/gin-contrib/sessions"
